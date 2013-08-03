@@ -44,6 +44,7 @@ object SharkBuild extends Build {
   val YARN_ENABLED = env("SHARK_YARN").getOrElse("false").toBoolean
 
   // Whether to build Shark with Tachyon jar.
+  // Hive 0.10+ uses newer Thrift versions that conflict with Tachyon's
   val TACHYON_ENABLED = false
 
   lazy val root = Project(
@@ -113,7 +114,8 @@ object SharkBuild extends Build {
       "org.apache.spark" %% "spark-core" % SPARK_VERSION,
       "org.apache.spark" %% "spark-repl" % SPARK_VERSION,
       "com.google.guava" % "guava" % "14.0.1",
-      "org.apache.hadoop" % "hadoop-client" % hadoopVersion excludeAll(excludeJackson, excludeNetty, excludeAsm),
+      // Differences in Jackson version cause runtime errors as per HIVE-3581
+      "org.apache.hadoop" % "hadoop-core" % hadoopVersion excludeAll( ExclusionRule(organization = "org.codehaus.jackson") ),
       // See https://code.google.com/p/guava-libraries/issues/detail?id=1095
       "com.google.code.findbugs" % "jsr305" % "1.3.+",
 
