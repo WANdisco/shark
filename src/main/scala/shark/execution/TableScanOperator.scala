@@ -27,8 +27,11 @@ import org.apache.hadoop.hive.ql.exec.{MapSplitPruning, Utilities}
 import org.apache.hadoop.hive.ql.io.HiveInputFormat
 import org.apache.hadoop.hive.ql.metadata.{Partition, Table}
 import org.apache.hadoop.hive.ql.plan.{PlanUtils, PartitionDesc, TableDesc}
-import org.apache.hadoop.hive.serde2.objectinspector.{ObjectInspector, ObjectInspectorFactory,
-  StructObjectInspector}
+import org.apache.hadoop.hive.serde2.{Serializer, Deserializer}
+import org.apache.hadoop.hive.serde2.`lazy`.{LazyStruct}
+import org.apache.hadoop.hive.serde2.objectinspector.{ObjectInspector, ObjectInspectorConverters, 
+  ObjectInspectorFactory, StructObjectInspector }
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorConverters.{Converter, IdentityConverter}
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory
 import org.apache.hadoop.io.Writable
 
@@ -48,9 +51,6 @@ import shark.tachyon.TachyonException
 class TableScanOperator extends TopOperator[HiveTableScanOperator] with HiveTopOperator {
 
   @transient var table: Table = _
-
-  // Metadata for Hive-partitions (i.e if the table was created from PARTITION BY). NULL if this
-  // table isn't Hive-partitioned. Set in SparkTask::initializeTableScanTableDesc().
   @transient var parts: Array[Object] = _
 
   // PartitionDescs are used during planning in Hive. This reference to a single PartitionDesc
@@ -78,8 +78,11 @@ class TableScanOperator extends TopOperator[HiveTableScanOperator] with HiveTopO
         serializer.getObjectInspector()
       } else {
         val partProps = firstConfPartDesc.getProperties()
-        val tableDeser = firstConfPartDesc.getDeserializerClass().newInstance()
-        tableDeser.initialize(hconf, partProps)
+        val tableDesc = firstConfPartDesc.getTableDesc()
+        val tableSerde = tableDesc.getDeserializerClass().newInstance()
+        tableSerde.initialize(hconf, tableDesc.getProperties())
+
+        // Get table and partition object inspectors
         val partCols = partProps.getProperty(META_TABLE_PARTITION_COLUMNS)
         val partNames = new ArrayList[String]
         val partObjectInspectors = new ArrayList[ObjectInspector]
@@ -92,10 +95,12 @@ class TableScanOperator extends TopOperator[HiveTableScanOperator] with HiveTopO
         // this is called on the master only.
         val partObjectInspector = ObjectInspectorFactory.getStandardStructObjectInspector(
             partNames, partObjectInspectors)
+            
         val oiList = Arrays.asList(
-            tableDeser.getObjectInspector().asInstanceOf[StructObjectInspector],
+        	tableSerde.getObjectInspector().asInstanceOf[StructObjectInspector],
             partObjectInspector.asInstanceOf[StructObjectInspector])
-        // new oi is union of table + partition object inspectors
+
+        // Union of both the table and partition OIs
         ObjectInspectorFactory.getUnionStructObjectInspector(oiList)
       }
     }
@@ -251,21 +256,19 @@ class TableScanOperator extends TopOperator[HiveTableScanOperator] with HiveTopO
     partitions.foreach { part =>
       val partition = part.asInstanceOf[Partition]
       val partDesc = Utilities.getPartitionDesc(partition)
-      val tablePath = partition.getPartitionPath.toString
+      val tableDesc = partDesc.getTableDesc()
+      val partProps = partDesc.getProperties()
 
       val ifc = partition.getInputFormatClass
         .asInstanceOf[java.lang.Class[InputFormat[Writable, Writable]]]
-      val parts = createHadoopRdd(tablePath, ifc)
+      val parts = createHadoopRdd(partition.getPartitionPath.toString, ifc)
 
       val serializedHconf = XmlSerializer.serialize(localHconf, localHconf)
       val partRDD = parts.mapPartitions { iter =>
         val hconf = XmlSerializer.deserialize(serializedHconf).asInstanceOf[HiveConf]
-        val deserializer = partDesc.getDeserializerClass().newInstance()
-        deserializer.initialize(hconf, partDesc.getProperties())
 
         // Get partition field info
         val partSpec = partDesc.getPartSpec()
-        val partProps = partDesc.getProperties()
 
         val partCols = partProps.getProperty(META_TABLE_PARTITION_COLUMNS)
         // Partitioning keys are delimited by "/"
@@ -280,10 +283,39 @@ class TableScanOperator extends TopOperator[HiveTableScanOperator] with HiveTopO
           }
         }
 
+        val partSerde = partDesc.getDeserializerClass().newInstance()
+        val tableSerde = tableDesc.getDeserializerClass().newInstance()
+        partSerde.initialize(hconf, partProps)
+        tableSerde.initialize(hconf, tableDesc.getProperties())
+
+        // Table OI may not be of same type as partition OI
+        val tblConvertedOI = ObjectInspectorConverters.getConvertedOI(
+          partSerde.getObjectInspector(), tableSerde.getObjectInspector())
+        .asInstanceOf[StructObjectInspector]
+
+        val partTblObjectInspectorConverter = ObjectInspectorConverters.getConverter(
+          partSerde.getObjectInspector(), tblConvertedOI);
+ 
+        // Deserialize each row
         val rowWithPartArr = new Array[Object](2)
         // Map each tuple to a row object
         iter.map { value =>
-          val deserializedRow = deserializer.deserialize(value) // LazyStruct
+          val deserializedRow = {
+
+            // If partition schema does not match table schema, update the row to match
+            val convertedRow = partTblObjectInspectorConverter.convert(partSerde.deserialize(value))
+
+            // If conversion was performed, convertedRow will be a standard Object, but if 
+            // conversion wasn't necessary, it will still be lazy. We can't have both across 
+            // partitions, so we serialize and deserialize again to make it lazy. 
+            convertedRow match {
+              case _: LazyStruct => convertedRow
+              case _ => tableSerde.deserialize(
+                          tableSerde.asInstanceOf[Serializer].serialize(
+                            convertedRow, tblConvertedOI))
+            }
+          }
+
           rowWithPartArr.update(0, deserializedRow)
           rowWithPartArr.update(1, partValues)
           rowWithPartArr.asInstanceOf[Object]
@@ -292,6 +324,7 @@ class TableScanOperator extends TopOperator[HiveTableScanOperator] with HiveTopO
       rdds(i) = partRDD.asInstanceOf[RDD[Any]]
       i += 1
     }
+
     // Even if we don't use any partitions, we still need an empty RDD
     if (rdds.size == 0) {
       SharkEnv.sc.makeRDD(Seq[Object]())
