@@ -11,7 +11,9 @@ testCliDriver_alter_concatenate_indexed_table.q
 testCliDriver_alter_index.q
 testCliDriver_alter_merge.q
 testCliDriver_alter_merge_2.q
+testCliDriver_alter_merge_orc.q
 testCliDriver_alter_merge_orc2.q
+testCliDriver_alter_merge_orc_stats.q
 testCliDriver_alter_merge_stats.q
 testCliDriver_alter_partition_clusterby_sortby.q
 testCliDriver_alter_partition_format_loc.q
@@ -114,6 +116,7 @@ testCliDriver_create_escape.q
 testCliDriver_create_genericudaf.q
 testCliDriver_create_genericudf.q
 testCliDriver_create_insert_outputformat.q
+testCliDriver_create_like.q
 testCliDriver_create_like2.q
 testCliDriver_create_like_tbl_props.q
 testCliDriver_create_like_view.q
@@ -153,8 +156,10 @@ testCliDriver_describe_xpath.q
 testCliDriver_diff_part_input_formats.q
 testCliDriver_disable_file_format_check.q
 testCliDriver_driverhook.q
+testCliDriver_drop_database_removes_partition_dirs.q
 testCliDriver_drop_function.q
 testCliDriver_drop_index.q
+testCliDriver_drop_index_removes_partition_dirs.q
 testCliDriver_drop_multi_partitions.q
 testCliDriver_drop_partitions_filter.q
 testCliDriver_drop_partitions_filter2.q
@@ -162,6 +167,7 @@ testCliDriver_drop_partitions_filter3.q
 testCliDriver_drop_partitions_ignore_protection.q
 testCliDriver_drop_table.q
 testCliDriver_drop_table2.q
+testCliDriver_drop_table_removes_partition_dirs.q
 testCliDriver_drop_udf.q
 testCliDriver_drop_view.q
 testCliDriver_enforce_order.q
@@ -169,6 +175,22 @@ testCliDriver_escape_clusterby1.q
 testCliDriver_escape_distributeby1.q
 testCliDriver_escape_orderby1.q
 testCliDriver_escape_sortby1.q
+testCliDriver_exim_00_nonpart_empty.q
+testCliDriver_exim_01_nonpart.q
+testCliDriver_exim_02_00_part_empty.q
+testCliDriver_exim_02_part.q
+testCliDriver_exim_03_nonpart_over_compat.q
+testCliDriver_exim_04_all_part.q
+testCliDriver_exim_05_some_part.q
+testCliDriver_exim_06_one_part.q
+testCliDriver_exim_07_all_part_over_nonoverlap.q
+testCliDriver_exim_08_nonpart_rename.q
+testCliDriver_exim_09_part_spec_nonoverlap.q
+testCliDriver_exim_10_external_managed.q
+testCliDriver_exim_21_export_authsuccess.q
+testCliDriver_exim_22_import_exist_authsuccess.q
+testCliDriver_exim_23_import_part_authsuccess.q
+testCliDriver_exim_24_import_nonexist_authsuccess.q
 testCliDriver_explain_dependency.q
 testCliDriver_explain_dependency2.q
 testCliDriver_explode_null.q
@@ -176,6 +198,7 @@ testCliDriver_fileformat_mix.q
 testCliDriver_fileformat_sequencefile.q
 testCliDriver_fileformat_text.q
 testCliDriver_global_limit.q
+testCliDriver_groupby1.q
 testCliDriver_groupby1_limit.q
 testCliDriver_groupby1_map.q
 testCliDriver_groupby1_map_nomap.q
@@ -312,6 +335,7 @@ testCliDriver_input4.q
 testCliDriver_input40.q
 testCliDriver_input41.q
 testCliDriver_input43.q
+testCliDriver_input44.q
 testCliDriver_input45.q
 testCliDriver_input46.q
 testCliDriver_input49.q
@@ -323,6 +347,7 @@ testCliDriver_input7.q
 testCliDriver_input8.q
 testCliDriver_input9.q
 testCliDriver_input_columnarserde.q
+testCliDriver_input_dfs.q
 testCliDriver_input_dynamicserde.q
 testCliDriver_input_lazyserde.q
 testCliDriver_input_limit.q
@@ -335,7 +360,6 @@ testCliDriver_input_part4.q
 testCliDriver_input_part5.q
 testCliDriver_input_part6.q
 testCliDriver_input_part7.q
-testCliDriver_input_part8.q
 testCliDriver_input_part9.q
 testCliDriver_input_testsequencefile.q
 testCliDriver_input_testxpath.q
@@ -360,6 +384,7 @@ testCliDriver_insert_into3.q
 testCliDriver_insert_into4.q
 testCliDriver_insert_into5.q
 testCliDriver_insert_into6.q
+testCliDriver_insert_overwrite_local_directory_1.q
 testCliDriver_insertexternal1.q
 testCliDriver_join0.q
 testCliDriver_join10.q
@@ -437,6 +462,7 @@ testCliDriver_load_dyn_part7.q
 testCliDriver_load_dyn_part8.q
 testCliDriver_load_dyn_part9.q
 testCliDriver_load_exist_part_authsuccess.q
+testCliDriver_load_fs.q
 testCliDriver_load_nonpart_authsuccess.q
 testCliDriver_load_overwrite.q
 testCliDriver_load_part_authsuccess.q
@@ -583,6 +609,8 @@ testCliDriver_reducesink_dedup.q
 testCliDriver_regex_col.q
 testCliDriver_regexp_extract.q
 testCliDriver_rename_column.q
+testCliDriver_rename_external_partition_location.q
+testCliDriver_repair.q
 testCliDriver_reset_conf.q
 testCliDriver_router_join_ppr.q
 testCliDriver_sample1.q
@@ -635,6 +663,7 @@ testCliDriver_stats_publisher_error_1.q
 testCliDriver_str_to_map.q
 testCliDriver_subq.q
 testCliDriver_subq2.q
+testCliDriver_symlink_text_input_format.q
 testCliDriver_tablename_with_select.q
 testCliDriver_test_boolean_whereclause.q
 testCliDriver_timestamp_comparison.q
@@ -871,4 +900,9 @@ testCliDriver_unset_table_view_property.q
 testCliDriver_updateAccessTime.q
 testCliDriver_view.q
 testCliDriver_view_inputs.q
+testCliDriver_windowing_columnPruning.q
+testCliDriver_windowing_navfn.q
+testCliDriver_windowing_ntile.q
+testCliDriver_windowing_rank.q
+testCliDriver_windowing_udaf.q
 testCliDriver_windowing_windowspec.q
