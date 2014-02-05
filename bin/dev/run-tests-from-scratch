@@ -361,7 +361,7 @@ else
   if $RUN_ALL_TESTS; then
      TESTS_FILE=$SHARK_PROJ_DIR/src/test/tests_0.11_new.txt
   else
-     TESTS_FILE=$SHARK_PROJ_DIR/src/test/tests_pass.txt
+     TESTS_FILE=$SHARK_PROJ_DIR/src/test/tests_pass11.txt
   fi
 
   if $PARALLEL_TESTS; then
