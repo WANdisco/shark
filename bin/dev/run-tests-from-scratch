@@ -88,7 +88,7 @@ fi
 usage()
 {
 cat << EOF
-usage: $0 [-h] [-s] [-e] [-d] [-t]
+usage: $0 [-h] [-s] [-e] [-d] [-t] [-p] [-a]
 
 OVERVIEW:
 This script will setup and run the Shark unit tests, building up the
@@ -100,6 +100,9 @@ OPTIONS:
    -s      Skip Spark (downloading and building)
    -e      Skip Hive (downloading and building)
    -d      Skip Hadoop (downloading and buildling)
+   -p 	   Split tests (and run in parallel in the future)
+   -a 	   Run all HiveCli tests (not only those from tests_pass.txt)
+   -f	   File with hosts to run tests at.
    -t      Compile Shark but skip compiling and running Tests.
 
 
@@ -134,7 +137,7 @@ SKIP_HIVE=false
 SKIP_HADOOP=false
 SKIP_TESTS=false
 
-while getopts "hsedt" opt; do
+while getopts "hsedtpaf:" opt; do
   case $opt in
     h)
       usage
@@ -154,6 +157,18 @@ while getopts "hsedt" opt; do
     t)
       echo SKIP TESTS
       SKIP_TESTS=true
+      ;;
+    p)
+      echo PARALLEL_TESTS
+      PARALLEL_TESTS=true
+      ;;
+    a)
+      echo RUN_ALL_TESTS
+      RUN_ALL_TESTS=true
+      ;;
+    f)
+      echo GET_HOSTS_FROM_FILE
+      HOSTS_FILE=$OPTARG
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -339,11 +354,36 @@ else
 
   clean_up_hive_metastore
   echo "Running Shark sbt/sbt clean test..."
-  sbt/sbt clean test
+  sbt/sbt clean test || echo "Some of the unit tests failed..." || echo "Some of the unit tests failed..." || echo "Some of the unit tests failed..." || echo "Some of the unit tests failed..."
 
   clean_up_hive_metastore
   echo "Running Hive CLI tests..."
-  TEST_FILE=src/test/tests_pass.txt ./bin/dev/test
+  if $RUN_ALL_TESTS; then
+     TESTS_FILE=$SHARK_PROJ_DIR/src/test/tests_0.11_new.txt
+  else
+     TESTS_FILE=$SHARK_PROJ_DIR/src/test/tests_pass.txt
+  fi
+
+  if $PARALLEL_TESTS; then
+     WORK_HOME=$WORKSPACE/split-tests
+     rm -rf $WORK_HOME
+     mkdir -p $WORK_HOME
+     pushd $WORK_HOME
+     grep -v '^#' $TESTS_FILE | split -l 10 - tests_
+
+     if $HOSTS_FILE; then
+        echo "Remote parallel execution not yet supported"
+     fi
+
+     for i in tests_*; do
+       TEST_WITH_ANT=1 TEST_FILE=$WORK_HOME/$i $SHARK_PROJ_DIR/bin/dev/test 
+       mv $SHARK_PROJ_DIR/bin/dev/test-results/TEST-shark.TestSharkCliDriver.xml $SHARK_PROJ_DIR/bin/dev/test-results/TEST-shark.TestSharkCliDriver_$i.xml || echo "Can not mode test results"
+       mv $SHARK_PROJ_DIR/target/test-reports/shark.TestSharkCliDriver.xml $SHARK_PROJ_DIR/target/test-reports/shark.TestSharkCliDriver_$i.xml || echo "Can not move test results"
+     done
+     popd
+  else
+     TEST_FILE=$TESTS_FILE ./bin/dev/test
+  fi
 
   popd
 fi
