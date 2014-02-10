@@ -356,7 +356,7 @@ else
 
   clean_up_hive_metastore
   echo "Running Shark sbt/sbt clean test..."
-  sbt/sbt clean test || echo "Some of the unit tests failed..." || echo "Some of the unit tests failed..." || echo "Some of the unit tests failed..." || echo "Some of the unit tests failed..."
+  sbt/sbt clean test || echo "Some of the unit tests failed..." 
 
   clean_up_hive_metastore
   echo "Running Hive CLI tests..."
@@ -377,17 +377,21 @@ else
         echo "Remote parallel execution not yet supported"
      fi
 
+     TEST_RC=0
      for i in tests_*; do
        TEST_WITH_ANT=1 TEST_FILE=$WORK_HOME/$i $SHARK_PROJ_DIR/bin/dev/test 
+       [ $? -eq "0" ] || TEST_RC=$?
        mv $SHARK_PROJ_DIR/bin/dev/test-results/TEST-shark.TestSharkCliDriver.xml $SHARK_PROJ_DIR/bin/dev/test-results/TEST-shark.TestSharkCliDriver_$i.xml || echo "Can not mode test results"
        mv $SHARK_PROJ_DIR/target/test-reports/shark.TestSharkCliDriver.xml $SHARK_PROJ_DIR/target/test-reports/shark.TestSharkCliDriver_$i.xml || echo "Can not move test results"
      done
      popd
   else
      TEST_FILE=$TESTS_FILE ./bin/dev/test
+     TEST_RC=$?
   fi
 
   popd
 fi
 
 echo "All Done."
+exit $TEST_RC
