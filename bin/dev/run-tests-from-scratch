@@ -136,6 +136,8 @@ SKIP_SPARK=false
 SKIP_HIVE=false
 SKIP_HADOOP=false
 SKIP_TESTS=false
+RUN_ALL_TESTS=false
+PARALLEL_TESTS=false
 
 while getopts "hsedtpaf:" opt; do
   case $opt in
