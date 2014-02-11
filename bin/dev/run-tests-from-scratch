@@ -28,6 +28,9 @@ if [ "x$SHARK_PROJ_DIR" == "x" ] ; then
   popd > /dev/null
 fi
 
+TESTS_ALL=$SHARK_PROJ_DIR/src/test/tests_0.11_new.txt
+TESTS_PASS=$SHARK_PROJ_DIR/src/test/tests_pass11.txt
+
 # Find Scala version automatically from the build file, and generate the download url.
 export SCALA_VERSION=`awk '/val SCALA_VERSION/ {print $4}' < ${SHARK_PROJ_DIR}/project/SharkBuild.scala |sed -e "s/\"\(.*\)\"/\1/"`
 SCALA_DOWNLOAD_PATH="http://www.scala-lang.org/files/archive/scala-${SCALA_VERSION}.tgz"
@@ -88,7 +91,7 @@ fi
 usage()
 {
 cat << EOF
-usage: $0 [-h] [-s] [-e] [-d] [-t]
+usage: $0 [-h] [-s] [-e] [-d] [-t] [-a]
 
 OVERVIEW:
 This script will setup and run the Shark unit tests, building up the
@@ -101,6 +104,7 @@ OPTIONS:
    -e      Skip Hive (downloading and building)
    -d      Skip Hadoop (downloading and buildling)
    -t      Compile Shark but skip compiling and running Tests.
+   -a      Run all Hive tests
 
 
 CONFIGURATION:
@@ -133,8 +137,9 @@ SKIP_SPARK=false
 SKIP_HIVE=false
 SKIP_HADOOP=false
 SKIP_TESTS=false
+TESTS_FILE=$TESTS_PASS
 
-while getopts "hsedt" opt; do
+while getopts "hsedta" opt; do
   case $opt in
     h)
       usage
@@ -154,6 +159,10 @@ while getopts "hsedt" opt; do
     t)
       echo SKIP TESTS
       SKIP_TESTS=true
+      ;;
+    a)
+      echo RUN_ALL_TESTS
+      TESTS_FILE=$TESTS_ALL
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -343,7 +352,7 @@ else
 
   clean_up_hive_metastore
   echo "Running Hive CLI tests..."
-  TEST_FILE=src/test/tests_pass.txt ./bin/dev/test
+  TEST_FILE=$TESTS_FILE ./bin/dev/test
 
   popd
 fi
