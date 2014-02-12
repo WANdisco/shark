@@ -96,7 +96,7 @@ fi
 usage()
 {
 cat << EOF
-usage: $0 [-h] [-s] [-e] [-d] [-t] [-a]
+usage: $0 [-h] [-s] [-e] [-d] [-t] [-a] [-p]
 
 OVERVIEW:
 This script will setup and run the Shark unit tests, building up the
@@ -110,6 +110,7 @@ OPTIONS:
    -d      Skip Hadoop (downloading and buildling)
    -t      Compile Shark but skip compiling and running Tests.
    -a      Run all Hive tests
+   -p      Split tests and run them in parallel
 
 
 CONFIGURATION:
@@ -142,8 +143,9 @@ SKIP_HIVE=false
 SKIP_HADOOP=false
 SKIP_TESTS=false
 TESTS_FILE=$TESTS_PASS
+PARALLEL_TESTS=false
 
-while getopts "hsedta" opt; do
+while getopts "hsedtap" opt; do
   case $opt in
     h)
       usage
@@ -163,6 +165,10 @@ while getopts "hsedta" opt; do
     a)
       echo RUN_ALL_TESTS
       TESTS_FILE=$TESTS_ALL
+      ;;
+    p)
+      echo PARALLEL_TESTS
+      PARALLEL_TESTS=true
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -305,10 +311,34 @@ else
   sbt/sbt clean test
 
   clean_up_hive_metastore
-  echo "Running Hive CLI tests..."
-  TEST_FILE=$TESTS_FILE ./bin/dev/test
+
+  if $PARALLEL_TESTS; then
+     WORK_HOME=$WORKSPACE/split-tests
+     rm -rf $WORK_HOME
+     mkdir -p $WORK_HOME
+     pushd $WORK_HOME
+     grep -v '^#' $TESTS_FILE | split -l 10 - tests_
+
+     if $HOSTS_FILE; then
+        echo "Remote parallel execution not yet supported"
+     fi
+
+     TEST_RC=0
+     for i in tests_*; do
+       TEST_WITH_ANT=1 TEST_FILE=$WORK_HOME/$i $SHARK_PROJ_DIR/bin/dev/test 
+       [ $? -eq "0" ] || TEST_RC=$?
+       mv $SHARK_PROJ_DIR/bin/dev/test-results/TEST-shark.TestSharkCliDriver.xml $SHARK_PROJ_DIR/bin/dev/test-results/TEST-shark.TestSharkCliDriver_$i.xml || echo "Can not mode test results"
+       mv $SHARK_PROJ_DIR/target/test-reports/shark.TestSharkCliDriver.xml $SHARK_PROJ_DIR/target/test-reports/shark.TestSharkCliDriver_$i.xml || echo "Can not move test results"
+     done
+     popd
+  else
+     echo "Running Hive CLI tests..."
+     TEST_FILE=$TESTS_FILE ./bin/dev/test
+     TEST_RC=$?
+  fi
 
   popd
 fi
 
 echo "All Done."
+exit $TEST_RC
