@@ -30,7 +30,7 @@ if [ "x$SHARK_PROJ_DIR" == "x" ] ; then
 fi
 
 TESTS_ALL=$SHARK_PROJ_DIR/src/test/tests_0.11_new.txt
-TESTS_PASS=$SHARK_PROJ_DIR/src/test/tests_pass11.txt
+TESTS_PASS=$SHARK_PROJ_DIR/src/test/tests_pass.txt
 
 # Find Scala version automatically from the build file, and generate the download url.
 export SCALA_VERSION=`awk '/val SCALA_VERSION/ {print $4}' < ${SHARK_PROJ_DIR}/project/SharkBuild.scala |sed -e "s/\"\(.*\)\"/\1/"`
