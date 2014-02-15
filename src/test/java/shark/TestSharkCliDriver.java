@@ -121,6 +121,8 @@ import java.util.Iterator;
       if (passRegex && passFile) {
         suite.addTest(test);
         regTestsFromFile.remove(test.getName());
+        if(readFile && regTestsFromFile.size() == 0)
+          break;
         System.out.println("TestSharkCliDriver: " + test.getName());
         if (readFile && regTestsFromFile.size() == 0)
           break;
