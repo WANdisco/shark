@@ -49,6 +49,23 @@ if [ -n "$TEST_FILE" ] ; then
   export TEST_FILE
 fi
 
+# Detect hadoop version if not defined
+if [ "x$HADOOP_VERSION" == "x" ]; then
+    HADOOP_VERSION=$($HADOOP_HOME/bin/hadoop version | awk '{if (NR == 1) {print $2;}}');
+fi
+
+hadoop_version_re="^([[:digit:]]+)\.([[:digit:]]+)(\.([[:digit:]]+))?.*$"
+
+if [[ "$HADOOP_VERSION" =~ $hadoop_version_re ]]; then
+    hadoop_major_ver=${BASH_REMATCH[1]}
+    hadoop_minor_ver=${BASH_REMATCH[2]}
+    hadoop_patch_ver=${BASH_REMATCH[4]}
+else
+    echo "Unable to determine Hadoop version information."
+    echo "'hadoop version' returned:"
+    echo `$HADOOP version`
+    exit 1
+fi
 
 SPARK_CLASSPATH+=":${HIVE_DEV_HOME}/build/ql/test/classes"
 SPARK_CLASSPATH+=":${HIVE_DEV_HOME}/data/conf"
@@ -67,6 +84,13 @@ TEST_JAVA_OPTS+="-Dtest.output.overwrite=false "
 TEST_JAVA_OPTS+="-Dtest.src.data.dir=${HIVE_DEV_HOME}/data "
 TEST_JAVA_OPTS+="-Dtest.tmp.dir=${BUILD_PATH}/tmp "
 TEST_JAVA_OPTS+="-Dtest.warehouse.dir=${BUILD_PATH}/test/data/warehouse "
+
+if [[ $hadoop_major_ver -eq 2 && $hadoop_minor_ver -ge 3 ]]; then
+	TEST_JAVA_OPTS+="-Dtest.dfs.mkdir=\"-mkdir -p\" "
+else
+	TEST_JAVA_OPTS+="-Dtest.dfs.mkdir=-mkdir "
+fi
+
 #TEST_JAVA_OPTS+="-Duser.dir=${HIVE_DEV_HOME}/ql "
 
 export TEST_JAVA_OPTS
