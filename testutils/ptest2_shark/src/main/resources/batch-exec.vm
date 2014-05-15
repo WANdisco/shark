@@ -118,7 +118,7 @@ TEST_JAVA_OPTS+="-Dtest.log.dir=${BUILD_PATH}/test/logs "
 TEST_JAVA_OPTS+="-Dtest.output.overwrite=false "
 TEST_JAVA_OPTS+="-Dtest.src.data.dir=${HIVE_DEV_HOME}/data "
 TEST_JAVA_OPTS+="-Dtest.tmp.dir=${BUILD_PATH}/tmp "
-TEST_JAVA_OPTS+="-Dtest.warehouse.dir=${BUILD_PATH}/test/data/warehouse "
+TEST_JAVA_OPTS+="-Dtest.warehouse.dir=pfile://${BUILD_PATH}/test/data/warehouse "
 
 if [[ $hadoop_major_ver -eq 2 && $hadoop_minor_ver -ge 3 ]]; then
   TEST_JAVA_OPTS+="-Dtest.dfs.mkdir=\"-mkdir -p\" "
