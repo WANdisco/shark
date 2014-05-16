@@ -99,9 +99,6 @@ class FileSinkOperator extends TerminalOperator with Serializable {
       finalPathsField.setAccessible(true)
       val finalPaths = finalPathsField.get(fileSystemPaths).asInstanceOf[Array[Path]]
 
-      // Get a reference to the FileSystem. No need for reflection here.
-      val fileSystem = FileSystem.get(localHconf)
-
       for (idx <- 0 until finalPaths.length) {
         var finalPath = finalPaths(idx)
         if (finalPath == null) {
@@ -114,6 +111,9 @@ class FileSinkOperator extends TerminalOperator with Serializable {
           createFilesMethod.invoke(localHiveOp, fileSystemPaths)
           finalPath = finalPaths(idx)
         }
+      // Get a reference to the FileSystem. No need for reflection here.
+      val fileSystem = finalPath.getFileSystem(localHconf)
+
         if (!fileSystem.exists(finalPath.getParent)) {
           fileSystem.mkdirs(finalPath.getParent)
         }
