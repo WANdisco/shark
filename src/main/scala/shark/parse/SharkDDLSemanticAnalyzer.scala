@@ -81,7 +81,8 @@ class SharkDDLSemanticAnalyzer(conf: HiveConf) extends DDLSemanticAnalyzer(conf)
     val cacheInProgress = Option(oldTblProps.get(SharkTblProperties.CACHE_IN_PROGRESS_FLAG.varname))
       .getOrElse("false").toBoolean
 
-    if (oldCacheMode == newCacheMode) {
+    val isAlreadyCached = SharkEnv.memoryMetadataManager.containsTable(databaseName, tableName)  
+    if (oldCacheMode == newCacheMode && (isAlreadyCached || cacheInProgress)) {
       logInfo(s"Table is already cached as '$newCacheMode', not changing.")
       return
     }
