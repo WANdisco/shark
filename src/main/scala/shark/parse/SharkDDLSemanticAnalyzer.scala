@@ -78,13 +78,17 @@ class SharkDDLSemanticAnalyzer(conf: HiveConf) extends DDLSemanticAnalyzer(conf)
 
     val oldCacheMode = CacheType.fromString(oldTblProps.get(SharkTblProperties.CACHE_FLAG.varname))
     val newCacheMode = CacheType.fromString(newTblProps.get(SharkTblProperties.CACHE_FLAG.varname))
-    val cacheInProgress = Option(oldTblProps.get(SharkTblProperties.CACHE_IN_PROGRESS_FLAG.varname))
+    var cacheInProgress = Option(oldTblProps.get(SharkTblProperties.CACHE_IN_PROGRESS_FLAG.varname))
       .getOrElse("false").toBoolean
 
     val isAlreadyCached = SharkEnv.memoryMetadataManager.containsTable(databaseName, tableName)  
-    if (oldCacheMode == newCacheMode && (isAlreadyCached || cacheInProgress)) {
-      logInfo(s"Table is already cached as '$newCacheMode', not changing.")
-      return
+    if (oldCacheMode == newCacheMode) {  // most likely means we're reloading RDD...
+      if (!isAlreadyCached) {
+        cacheInProgress = false
+      } else {
+        logInfo(s"Table is already cached as '$newCacheMode', not changing.")
+        return
+      }
     }
 
     if (cacheInProgress && newCacheMode != CacheType.NONE) {
