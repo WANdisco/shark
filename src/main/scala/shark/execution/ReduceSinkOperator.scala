@@ -102,7 +102,7 @@ class ReduceSinkOperator extends UnaryOperator[ReduceSinkDesc] {
    */
   private def initializeOisAndSers(conf: ReduceSinkDesc, rowInspector: ObjectInspector) {
     keyEval = conf.getKeyCols.map(ExprNodeEvaluatorFactory.get(_)).toArray
-    keyFieldObjInspectors = initEvaluators(keyEval, 0, keyEval.length, rowInspector)
+    // keyFieldObjInspectors = initEvaluators(keyEval, 0, conf.getNumDistributionKeys(), rowInspector)
     
     val numDistributionKeys = conf.getNumDistributionKeys()
     val distinctColIndices = conf.getDistinctColumnIndices()

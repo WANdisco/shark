@@ -149,31 +149,10 @@ abstract class Operator[+T <: HiveDesc] extends LogHelper with Serializable {
       outputColNames: JavaList[String], length: Int, rowInspector: ObjectInspector): 
       StructObjectInspector = {
 
-    val fieldObjectInspectors = initEvaluators(evals, 0, length, rowInspector);
-    initEvaluatorsAndReturnStruct(evals, fieldObjectInspectors, distinctColIndices, 
-      outputColNames, length, rowInspector)
-  }
-  
-  /**
-   * Copy from the org.apache.hadoop.hive.ql.exec.ReduceSinkOperator
-   * Initializes array of ExprNodeEvaluator. Adds Union field for distinct
-   * column indices for group by.
-   * Puts the return values into a StructObjectInspector with output column
-   * names.
-   *
-   * If distinctColIndices is empty, the object inspector is same as
-   * {@link Operator#initEvaluatorsAndReturnStruct(ExprNodeEvaluator[], List, ObjectInspector)}
-   */
-  protected def initEvaluatorsAndReturnStruct(
-      evals: Array[ExprNodeEvaluator], fieldObjectInspectors: Array[ObjectInspector], 
-      distinctColIndices: JavaList[JavaList[Integer]], outputColNames: JavaList[String], 
-      length: Int, rowInspector: ObjectInspector): StructObjectInspector = {
-
-    val inspectorLen = if (evals.length > length) length + 1 else evals.length
-    val sois = new ArrayBuffer[ObjectInspector](inspectorLen)
+    val sois = new ArrayBuffer[ObjectInspector]()
 
     // keys
-    // var fieldObjectInspectors = initEvaluators(evals, 0, length, rowInspector);
+    var fieldObjectInspectors = initEvaluators(evals, 0, length, rowInspector);
     sois ++= fieldObjectInspectors
 
     if (outputColNames.size > length) {
