@@ -24,6 +24,8 @@ import org.apache.spark.serializer.{KryoSerializer => SparkKryoSerializer}
 
 import shark.SharkContext
 
+import scala.reflect.ClassTag
+
 /**
  * Java object serialization using Kryo. This is much more efficient, but Kryo
  * sometimes is buggy to use. We use this mainly to serialize the object
@@ -36,11 +38,11 @@ object KryoSerializer {
     new SparkKryoSerializer(sparkConf)
   }
 
-  def serialize[T](o: T): Array[Byte] = {
+  def serialize[T: ClassTag](o: T): Array[Byte] = {
     ser.newInstance().serialize(o).array()
   }
 
-  def deserialize[T](bytes: Array[Byte]): T  = {
+  def deserialize[T: ClassTag](bytes: Array[Byte]): T  = {
     ser.newInstance().deserialize[T](ByteBuffer.wrap(bytes))
   }
 }

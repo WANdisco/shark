@@ -35,7 +35,7 @@ object SharkBuild extends Build {
 
   val HIVE_VERSION = "0.11.0-shark-0.9.1"
 
-  val SPARK_VERSION = "1.0.0-SNAPSHOT"
+  val SPARK_VERSION = "1.0.1"
 
   val SCALA_VERSION = "2.10.3"
 
@@ -196,6 +196,7 @@ object SharkBuild extends Build {
     ),
     libraryDependencies ++= hiveDependencies ++ scalaDependencies ++ tachyonDependency ++ yarnDependency,
     libraryDependencies ++= Seq(
+      "org.mortbay.jetty" % "servlet-api" % "3.0.20100224",
       "org.apache.spark" %% "spark-core" % sparkVersion,
       "org.apache.spark" %% "spark-repl" % sparkVersion,
       "com.google.guava" % "guava" % "14.0.1",

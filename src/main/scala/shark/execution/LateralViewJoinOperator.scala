@@ -33,6 +33,8 @@ import org.apache.spark.SparkEnv
 import org.apache.spark.rdd.RDD
 import org.apache.spark.serializer.{KryoSerializer => SparkKryoSerializer}
 
+import scala.reflect.ClassTag
+
 
 /**
  * LateralViewJoin is used only for LATERAL VIEW explode, which adds a new row per array element
@@ -175,12 +177,12 @@ object KryoSerializerToString {
 
   @transient val kryoSer = new SparkKryoSerializer(SparkEnv.get.conf)
 
-  def serialize[T](o: T): String = {
+  def serialize[T: ClassTag](o: T): String = {
     val bytes = kryoSer.newInstance().serialize(o).array()
     new String(Base64.encodeBase64(bytes))
   }
 
-  def deserialize[T](byteString: String): T  = {
+  def deserialize[T: ClassTag](byteString: String): T  = {
     val bytes = Base64.decodeBase64(byteString.getBytes())
     kryoSer.newInstance().deserialize[T](ByteBuffer.wrap(bytes))
   }
