@@ -35,7 +35,7 @@ object SharkBuild extends Build {
 
   val HIVE_VERSION = "0.11.0-shark-0.9.1"
 
-  val SPARK_VERSION = "1.0.1"
+  val SPARK_VERSION = "1.0.2"
 
   val SCALA_VERSION = "2.10.3"
 
