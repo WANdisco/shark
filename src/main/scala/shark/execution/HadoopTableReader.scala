@@ -148,9 +148,14 @@ class HadoopTableReader(@transient _tableDesc: TableDesc, @transient _localHConf
       val partDesc = Utilities.getPartitionDesc(partition)
       val partPath = partition.getPartitionPath
 
+      logDebug("makeRDDForPartitionedTable: " + partPath )
+
       val fs = partPath.getFileSystem(hiveConf)
-      if (!fs.exists(partPath))
-        return SharkEnv.sc.emptyRDD
+      if (!fs.exists(partPath)) {
+        logError("Partition path does not exist, while metastore contains partition info: " + partPath + "... creating an empty folder")
+        fs.mkdirs(partPath);
+        //return SharkEnv.sc.emptyRDD
+      }
 
       val inputPathStr = applyFilterIfNeeded(partPath, filterOpt)
       val ifc = partDesc.getInputFileFormatClass
